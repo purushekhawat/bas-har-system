@@ -1,0 +1,285 @@
+{
+  "experiments": [
+    {
+      "id": "BAS-BIO-01",
+      "code": "BAS-BIO-01",
+      "name": "Microgravity Protein Crystal Growth & Cell Inoculation",
+      "payload_rack": "BAS-03 Science Rack Alpha",
+      "scientist": "Gagannaut Dr. Prashant Nair",
+      "description": "Validation of macromolecular crystallography and recombinant enzyme crystallization kinetics under microgravity conditions on-board Bharatiya Antariksh Station.",
+      "estimated_duration_s": 320,
+      "steps": [
+        {
+          "step_id": "BIO-01",
+          "step_number": 1,
+          "title": "Glovebox Negative Pressure Seal Check",
+          "action_class": "SAFETY_CHECK",
+          "target_zone": "GLOVEBOX_A",
+          "target_zone_coords": {"x": 0.15, "y": 0.35, "w": 0.35, "h": 0.45},
+          "required_tools": ["GLOVEBOX_LOCK_LEVER"],
+          "prerequisites": [],
+          "duration_s": 25,
+          "safety_critical": true,
+          "instructions": "Inspect glovebox containment gasket. Rotate secondary seal latch 90° clockwise. Verify negative delta-P reads > 25 Pa on digital rack readout.",
+          "voice_prompt": "Step 1: Glovebox containment check. Verify latch seal and confirm negative pressure differential.",
+          "completion_criteria": {
+            "dual_hands_in_zone": true,
+            "min_holding_frames": 20,
+            "target_angle_range": [70, 110]
+          }
+        },
+        {
+          "step_id": "BIO-02",
+          "step_number": 2,
+          "title": "Retrieve Cryo-Vial from -80°C Stowage",
+          "action_class": "SAMPLE_STOWAGE",
+          "target_zone": "CRYO_STOWAGE",
+          "target_zone_coords": {"x": 0.70, "y": 0.15, "w": 0.25, "h": 0.35},
+          "required_tools": ["CRYO_TONGS", "THERMAL_SLEEVE"],
+          "prerequisites": ["BIO-01"],
+          "duration_s": 30,
+          "safety_critical": false,
+          "instructions": "Open Cryo-Rack door B2. Use insulated tongs to extract Lysozyme crystallization precursor vial #CY-104. Place into thermal equilibration dock.",
+          "voice_prompt": "Step 2: Retrieve Cryo-Vial from minus eighty stowage using insulated tongs.",
+          "completion_criteria": {
+            "hand_in_zone": "CRYO_STOWAGE",
+            "min_holding_frames": 25
+          }
+        },
+        {
+          "step_id": "BIO-03",
+          "step_number": 3,
+          "title": "Precision Micropipetting (100 µL Buffer Transfer)",
+          "action_class": "PIPETTING_REAGENT",
+          "target_zone": "PIPETTE_RACK",
+          "target_zone_coords": {"x": 0.30, "y": 0.45, "w": 0.30, "h": 0.35},
+          "required_tools": ["MICRO_PIPETTE_P200", "AEROSOL_BARRIER_TIPS"],
+          "prerequisites": ["BIO-02"],
+          "duration_s": 45,
+          "safety_critical": true,
+          "instructions": "Calibrate micropipette to 100 µL. Aspirate precipitant buffer without introducing microgravity air bubble cavitation. Dispense into hanging-drop capillary well.",
+          "voice_prompt": "Step 3: Precision micropipetting. Transfer 100 microliters buffer slowly to prevent microgravity bubbling.",
+          "completion_criteria": {
+            "hand_in_zone": "PIPETTE_RACK",
+            "elbow_flexion_range": [80, 130],
+            "steady_hand_frames": 35
+          }
+        },
+        {
+          "step_id": "BIO-04",
+          "step_number": 4,
+          "title": "Centrifuge Rotor Loading & Counterbalance",
+          "action_class": "CENTRIFUGE_OPERATION",
+          "target_zone": "CENTRIFUGE_ROTATION_BAY",
+          "target_zone_coords": {"x": 0.60, "y": 0.50, "w": 0.30, "h": 0.40},
+          "required_tools": ["COUNTERWEIGHT_TUBE_1.5ML", "ROTOR_LATCH_KEY"],
+          "prerequisites": ["BIO-03"],
+          "duration_s": 40,
+          "safety_critical": true,
+          "instructions": "CRITICAL SAFETY: Place sample tube in Slot 1. Place matching counterweight tube in diametrically opposed Slot 4. Inspect balance indicator.",
+          "voice_prompt": "Step 4: Load sample and counterbalance into micro-centrifuge. Both tubes must be diametrically balanced.",
+          "completion_criteria": {
+            "counterbalance_verified": true,
+            "two_sample_placement_events": true
+          }
+        },
+        {
+          "step_id": "BIO-05",
+          "step_number": 5,
+          "title": "Secure Rotor Latch & Initiate 3500 RPM Cycle",
+          "action_class": "CENTRIFUGE_OPERATION",
+          "target_zone": "CENTRIFUGE_ROTATION_BAY",
+          "target_zone_coords": {"x": 0.60, "y": 0.50, "w": 0.30, "h": 0.40},
+          "required_tools": ["SAFETY_HOOD_LATCH"],
+          "prerequisites": ["BIO-04"],
+          "duration_s": 35,
+          "safety_critical": true,
+          "instructions": "Lower safety shield until magnetic interlock engages. Enter 3500 RPM / 180s on digital rotary console. Confirm rotor speed telemetry.",
+          "voice_prompt": "Step 5: Lock safety lid and start 3500 RPM centrifuge cycle.",
+          "completion_criteria": {
+            "lid_closure_confirmed": true,
+            "activation_gesture_detected": true
+          }
+        },
+        {
+          "step_id": "BIO-06",
+          "step_number": 6,
+          "title": "Spectrophotometric Optical Density Scan",
+          "action_class": "INSTRUMENT_CALIBRATION",
+          "target_zone": "GLOVEBOX_A",
+          "target_zone_coords": {"x": 0.15, "y": 0.35, "w": 0.35, "h": 0.45},
+          "required_tools": ["UV_VIS_FLOW_CELL"],
+          "prerequisites": ["BIO-05"],
+          "duration_s": 40,
+          "safety_critical": false,
+          "instructions": "Transfer crystal well to optical chamber. Run wavelength sweep at 280 nm. Log baseline absorption peak to on-board data store.",
+          "voice_prompt": "Step 6: Optical density scan. Place crystal well into spectrophotometer and record 280 nm absorption.",
+          "completion_criteria": {
+            "instrument_engaged": true,
+            "min_holding_frames": 30
+          }
+        },
+        {
+          "step_id": "BIO-07",
+          "step_number": 7,
+          "title": "Specimen Hermetic Sealing & Cryo-Vault Archival",
+          "action_class": "SAMPLE_STOWAGE",
+          "target_zone": "CRYO_STOWAGE",
+          "target_zone_coords": {"x": 0.70, "y": 0.15, "w": 0.25, "h": 0.35},
+          "required_tools": ["HERMETIC_CASSETTE_R1"],
+          "prerequisites": ["BIO-06"],
+          "duration_s": 30,
+          "safety_critical": false,
+          "instructions": "Seal sample cassette with vacuum clip. Return to Cryo-Stowage slot C-04. Confirm temperature latch status is locked.",
+          "voice_prompt": "Step 7: Final step. Hermetically seal sample cassette and return to cryo-stowage for Earth return.",
+          "completion_criteria": {
+            "hand_in_zone": "CRYO_STOWAGE",
+            "lock_confirmed": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "BAS-MAT-04",
+      "code": "BAS-MAT-04",
+      "name": "High-Vacuum Directional Alloy Solidification",
+      "payload_rack": "BAS-02 Material Physics Furnace",
+      "scientist": "Gagannaut Ajit Krishnan",
+      "description": "Solidification microstructural analysis of Ti-Al aerospace superalloy in microgravity to eliminate gravity-induced convection and buoyancy defects.",
+      "estimated_duration_s": 240,
+      "steps": [
+        {
+          "step_id": "MAT-01",
+          "step_number": 1,
+          "title": "Argon Purge & Thermal Shield Verification",
+          "action_class": "SAFETY_CHECK",
+          "target_zone": "GLOVEBOX_A",
+          "target_zone_coords": {"x": 0.20, "y": 0.30, "w": 0.35, "h": 0.40},
+          "required_tools": ["ARGON_VALVE_MANIFOLD"],
+          "prerequisites": [],
+          "duration_s": 30,
+          "safety_critical": true,
+          "instructions": "Purge vacuum chamber with ultra-pure Argon. Verify shield cooling flow > 1.2 L/min.",
+          "voice_prompt": "Step 1: Material furnace argon purge and thermal shield verification.",
+          "completion_criteria": {"dual_hands_in_zone": true}
+        },
+        {
+          "step_id": "MAT-02",
+          "step_number": 2,
+          "title": "Insert Superalloy Ingot into Ceramic Core",
+          "action_class": "SAMPLE_STOWAGE",
+          "target_zone": "GLOVEBOX_A",
+          "target_zone_coords": {"x": 0.20, "y": 0.30, "w": 0.35, "h": 0.40},
+          "required_tools": ["CERAMIC_INSERT_JIG"],
+          "prerequisites": ["MAT-01"],
+          "duration_s": 40,
+          "safety_critical": true,
+          "instructions": "Slide Ti-Al sample into quartz heating zone. Align thermocouple beads 1 through 4.",
+          "voice_prompt": "Step 2: Insert superalloy specimen into ceramic heating core.",
+          "completion_criteria": {"hand_in_zone": "GLOVEBOX_A"}
+        },
+        {
+          "step_id": "MAT-03",
+          "step_number": 3,
+          "title": "Laser Pyrometer Alignment & Calibration",
+          "action_class": "INSTRUMENT_CALIBRATION",
+          "target_zone": "PIPETTE_RACK",
+          "target_zone_coords": {"x": 0.30, "y": 0.45, "w": 0.30, "h": 0.35},
+          "required_tools": ["OPTICAL_ALIGNMENT_TARGET"],
+          "prerequisites": ["MAT-02"],
+          "duration_s": 35,
+          "safety_critical": false,
+          "instructions": "Zero dual-wavelength optical pyrometer. Verify target crosshair is centered on crucible aperture.",
+          "voice_prompt": "Step 3: Calibrate laser pyrometer alignment to crucible aperture.",
+          "completion_criteria": {"hand_in_zone": "PIPETTE_RACK"}
+        },
+        {
+          "step_id": "MAT-04",
+          "step_number": 4,
+          "title": "Rapid Quench Gas Actuation & Lock",
+          "action_class": "SAFETY_CHECK",
+          "target_zone": "CENTRIFUGE_ROTATION_BAY",
+          "target_zone_coords": {"x": 0.60, "y": 0.50, "w": 0.30, "h": 0.40},
+          "required_tools": ["QUENCH_VALVE_LEVER"],
+          "prerequisites": ["MAT-03"],
+          "duration_s": 35,
+          "safety_critical": true,
+          "instructions": "Rotate cryogenic Helium quench lever. Confirm temperature drops at > 80°C/s.",
+          "voice_prompt": "Step 4: Actuate quench cooling valve and lock chamber.",
+          "completion_criteria": {"hand_in_zone": "CENTRIFUGE_ROTATION_BAY"}
+        }
+      ]
+    },
+    {
+      "id": "BAS-MED-02",
+      "code": "BAS-MED-02",
+      "name": "Astronaut Physiological Blood Hematocrit Separation",
+      "payload_rack": "BAS-04 Bio-Medical Module",
+      "scientist": "Gagannaut Angad Pratap",
+      "description": "On-board microgravity blood analysis to monitor astronaut erythrocyte morphology, hemoglobin count, and immune response during long-duration orbital flight.",
+      "estimated_duration_s": 260,
+      "steps": [
+        {
+          "step_id": "MED-01",
+          "step_number": 1,
+          "title": "Sterile Field & Containment Prep",
+          "action_class": "SAFETY_CHECK",
+          "target_zone": "GLOVEBOX_A",
+          "target_zone_coords": {"x": 0.15, "y": 0.35, "w": 0.35, "h": 0.45},
+          "required_tools": ["STERILE_DRAPE", "CHLORHEXIDINE_SWAB"],
+          "prerequisites": [],
+          "duration_s": 25,
+          "safety_critical": true,
+          "instructions": "Sanitize glove ports with antiseptic wipe. Deploy magnetic instrument retainers so items do not float away in microgravity.",
+          "voice_prompt": "Step 1: Sanitize biomedical glovebox and deploy magnetic tool anchors.",
+          "completion_criteria": {"dual_hands_in_zone": true}
+        },
+        {
+          "step_id": "MED-02",
+          "step_number": 2,
+          "title": "Micro-Capillary Blood Sampling",
+          "action_class": "PIPETTING_REAGENT",
+          "target_zone": "PIPETTE_RACK",
+          "target_zone_coords": {"x": 0.30, "y": 0.45, "w": 0.30, "h": 0.35},
+          "required_tools": ["CAPILLARY_LANCET", "HEPARIN_TUBE"],
+          "prerequisites": ["MED-01"],
+          "duration_s": 40,
+          "safety_critical": true,
+          "instructions": "Collect 50 µL capillary sample into heparinized micro-tube. Seal capillary ends with sealing clay wax.",
+          "voice_prompt": "Step 2: Collect capillary blood sample into heparinized tube and wax-seal both ends.",
+          "completion_criteria": {"hand_in_zone": "PIPETTE_RACK"}
+        },
+        {
+          "step_id": "MED-03",
+          "step_number": 3,
+          "title": "Micro-Centrifuge Hematocrit Separation",
+          "action_class": "CENTRIFUGE_OPERATION",
+          "target_zone": "CENTRIFUGE_ROTATION_BAY",
+          "target_zone_coords": {"x": 0.60, "y": 0.50, "w": 0.30, "h": 0.40},
+          "required_tools": ["HEMATOCRIT_ROTOR"],
+          "prerequisites": ["MED-02"],
+          "duration_s": 50,
+          "safety_critical": true,
+          "instructions": "Mount capillary tube with wax seal against outer gasket. Spin for 5 minutes at 12000 RPM. Verify plasma/RBC boundary interface.",
+          "voice_prompt": "Step 3: Load micro-centrifuge and initiate high-speed hematocrit separation.",
+          "completion_criteria": {"hand_in_zone": "CENTRIFUGE_ROTATION_BAY"}
+        },
+        {
+          "step_id": "MED-04",
+          "step_number": 4,
+          "title": "Digital Bio-Analyzer Digital Readout",
+          "action_class": "INSTRUMENT_CALIBRATION",
+          "target_zone": "GLOVEBOX_A",
+          "target_zone_coords": {"x": 0.15, "y": 0.35, "w": 0.35, "h": 0.45},
+          "required_tools": ["OPTICAL_READER"],
+          "prerequisites": ["MED-03"],
+          "duration_s": 35,
+          "safety_critical": false,
+          "instructions": "Insert separated tube into optical reader. Measure packed cell volume percentage. Record telemetry to station memory.",
+          "voice_prompt": "Step 4: Scan hematocrit tube with digital optical reader and record telemetry.",
+          "completion_criteria": {"hand_in_zone": "GLOVEBOX_A"}
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISRO BAS-HAR | On-Board Experiment AI Guidance Subsystem (SIH PS 174)</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- =========================================================================
+       FLIGHT DECK HEADER
+       ========================================================================= -->
+  <header class="flight-header">
+    <div class="brand-section">
+      <div class="isro-badge">
+        <div class="isro-emblem">ISRO</div>
+        <div class="station-title">
+          <h1>BHARATIYA ANTARIKSH STATION <span>// BAS-03</span></h1>
+          <div class="tag-sub">ON-BOARD AI HUMAN ACTIVITY RECOGNITION (HAR) SUBSYSTEM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mission-telemetry-strip">
+      <div class="telemetry-item">
+        <span class="label">MISSION CLOCK (MET)</span>
+        <span class="val green" id="hdr-met-clock">04:18:22</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="label">ORBIT ALTI / INCL</span>
+        <span class="val" id="hdr-orbit">408.2 km | 51.6°</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="label">DOWNLINK PASS</span>
+        <span class="val" id="hdr-pass-status">ISTRAC BENGALURU [AOS]</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="label">ON-BOARD INFERENCE</span>
+        <span class="val green" id="hdr-latency">14.8 ms (30 FPS)</span>
+      </div>
+    </div>
+
+    <div class="status-pills">
+      <div class="pill pill-offline">
+        <span class="pulse-dot"></span>
+        <span>100% OFFLINE EDGE AI</span>
+      </div>
+      <button id="btn-voice-toggle" class="feed-btn" title="Toggle Astronaut Voice Guidance">
+        🔊 VOICE ON
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       MAIN GRID VIEWPORT
+       ========================================================================= -->
+  <main class="main-viewport-grid">
+
+    <!-- LEFT COLUMN: VIDEO FEED & TACTICAL HUD -->
+    <section class="left-main-column">
+      <div class="video-hud-card">
+        <div class="card-header-tactical">
+          <div class="card-title-group">
+            <span style="color: var(--neon-cyan);">◈</span>
+            <span>EXPERIMENT PAYLOAD CAM-RACK-01 // OPTICAL FEED</span>
+          </div>
+          <div class="hud-cam-selector">
+            <button class="feed-btn active" id="btn-src-synthetic" onclick="switchFeedSource('synthetic')">🛰️ SPACE SIM</button>
+            <button class="feed-btn" id="btn-src-webcam" onclick="switchFeedSource('webcam')">📹 LIVE WEBCAM</button>
+            <label class="feed-btn" style="cursor: pointer;">
+              📁 UPLOAD MP4
+              <input type="file" id="video-file-input" accept="video/*" style="display: none;" onchange="handleVideoUpload(event)">
+            </label>
+          </div>
+        </div>
+
+        <!-- Video & HUD Overlay Container -->
+        <div class="video-container" id="video-wrapper">
+          <video id="camera-video" autoplay playsinline muted style="display: none;"></video>
+          <canvas id="synthetic-canvas" width="960" height="540"></canvas>
+          <canvas id="overlay-canvas" width="960" height="540"></canvas>
+
+          <!-- Tactical Corner Brackets -->
+          <div class="tactical-corner corner-tl"></div>
+          <div class="tactical-corner corner-tr"></div>
+          <div class="tactical-corner corner-bl"></div>
+          <div class="tactical-corner corner-br"></div>
+
+          <!-- Feed Live Stats -->
+          <div class="feed-live-stats">
+            <span class="feed-stat-line">FEED: <span id="hud-feed-id" style="color: var(--neon-cyan);">SIM-BAS-MICROGRAVITY</span></span>
+            <span class="feed-stat-line">RESOLUTION: 960x540 RGB | SE(3) INVARIANT</span>
+            <span class="feed-stat-line">ACTIVE RACK: <span id="hud-active-rack" style="color: var(--neon-green);">GLOVEBOX_A</span></span>
+          </div>
+
+          <!-- Current Action Badge -->
+          <div class="current-action-badge">
+            <div class="action-label">RECOGNIZED ACTIVITY</div>
+            <div class="action-title" id="hud-action-name">SAFETY_CHECK</div>
+            <div class="action-confidence-bar">
+              <div class="action-confidence-fill" id="hud-action-conf-bar" style="width: 92%;"></div>
+            </div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;" id="hud-conf-text">CONFIDENCE: 92%</div>
+          </div>
+
+          <!-- Attitude Horizon Indicator -->
+          <div class="attitude-indicator-hud">
+            <div class="artificial-horizon-circle">
+              <div class="horizon-bar" id="hud-horizon-bar"></div>
+            </div>
+            <div>
+              <div style="color: var(--text-muted); font-size: 9px;">ASTRONAUT ATTITUDE</div>
+              <div style="color: var(--neon-cyan); font-weight: 700;" id="hud-attitude-text">NOMINAL DRIFT</div>
+              <div style="color: var(--text-secondary); font-size: 10px;" id="hud-roll-pitch-text">R: +0.0° | P: +0.0°</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kinematics Gauges Strip -->
+        <div class="kinematics-gauge-bar">
+          <div class="gauge-item">
+            <div class="gauge-label">
+              <span>ELBOW ANGLE (INVARIANT)</span>
+              <span id="val-elbow-angle">98°</span>
+            </div>
+            <div class="gauge-value" id="disp-elbow">98°</div>
+            <div class="gauge-bar-track"><div class="gauge-bar-val" id="bar-elbow" style="width: 55%;"></div></div>
+          </div>
+          <div class="gauge-item">
+            <div class="gauge-label">
+              <span>SHOULDER ANGLE</span>
+              <span id="val-shoulder-angle">42°</span>
+            </div>
+            <div class="gauge-value" id="disp-shoulder">42°</div>
+            <div class="gauge-bar-track"><div class="gauge-bar-val" id="bar-shoulder" style="width: 40%;"></div></div>
+          </div>
+          <div class="gauge-item">
+            <div class="gauge-label">
+              <span>DUAL HAND PROXIMITY</span>
+              <span id="val-hand-dist">0.24m</span>
+            </div>
+            <div class="gauge-value" id="disp-hand-dist">0.24m</div>
+            <div class="gauge-bar-track"><div class="gauge-bar-val" id="bar-hand-dist" style="width: 35%;"></div></div>
+          </div>
+          <div class="gauge-item">
+            <div class="gauge-label">
+              <span>PAYLOAD ZONE ENGAGED</span>
+              <span id="val-zone-dist">100%</span>
+            </div>
+            <div class="gauge-value" id="disp-zone-name" style="font-size: 13px; color: var(--neon-green);">GLOVEBOX_A</div>
+            <div class="gauge-bar-track"><div class="gauge-bar-val" id="bar-zone" style="width: 90%; background: var(--neon-green);"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Scenario Trigger Strip for Hackathon Judges -->
+      <div class="scenario-trigger-strip">
+        <div class="scenario-title-row">
+          <div class="scenario-heading">
+            <span>⚡</span>
+            <span>JURY DEMONSTRATION & EVALUATION SCENARIOS</span>
+          </div>
+          <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">SELECT TEST RUN:</span>
+        </div>
+        <div class="scenario-buttons">
+          <button class="btn-scenario active-scenario" id="btn-scen-nominal" onclick="selectScenario('nominal_run')">
+            <span class="btn-tag">TEST CASE 01</span>
+            <span class="btn-name">🟢 Nominal Protocol Run</span>
+          </button>
+          <button class="btn-scenario anomaly-btn" id="btn-scen-anomaly" onclick="selectScenario('out_of_sequence_anomaly')">
+            <span class="btn-tag">TEST CASE 02</span>
+            <span class="btn-name">🔴 Out-of-Sequence Skip</span>
+          </button>
+          <button class="btn-scenario" id="btn-scen-inverted" onclick="selectScenario('inverted_floating_test')">
+            <span class="btn-tag">TEST CASE 03</span>
+            <span class="btn-name">🔄 Inverted Floating (180°)</span>
+          </button>
+          <button class="btn-scenario" id="btn-scen-tilt" onclick="selectScenario('lateral_tilt_test')">
+            <span class="btn-tag">TEST CASE 04</span>
+            <span class="btn-name">📐 Lateral 45° Attitude</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: PROCEDURAL STEP FSM & TELEMETRY -->
+    <aside class="right-sidebar-stack">
+
+      <!-- Active Protocol Selection Card -->
+      <div class="protocol-card">
+        <div class="protocol-selector-row">
+          <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">SELECT EXPERIMENT</span>
+          <select id="protocol-select" class="protocol-dropdown" onchange="changeExperiment(this.value)">
+            <option value="BAS-BIO-01">BAS-BIO-01: Protein Crystal Growth</option>
+            <option value="BAS-MAT-04">BAS-MAT-04: High-Vacuum Alloy Crucible</option>
+            <option value="BAS-MED-02">BAS-MED-02: Micro-Blood Hematocrit</option>
+          </select>
+        </div>
+
+        <div class="integrity-score-box">
+          <div class="score-num" id="fsm-integrity-score">100%</div>
+          <div>
+            <div style="font-weight: 700; font-size: 12px; color: #fff;">PROTOCOL INTEGRITY SCORE</div>
+            <div class="score-desc" id="fsm-integrity-desc">Nominal adherence. Zero safety violations.</div>
+          </div>
+        </div>
+
+        <!-- Active Step Banner -->
+        <div class="active-step-banner">
+          <div class="step-num-pill" id="active-step-badge">CURRENT STEP 1 OF 7</div>
+          <div class="step-title-text" id="active-step-title">Glovebox Negative Pressure Seal Check</div>
+          <div class="step-instruction-text" id="active-step-instructions">
+            Inspect glovebox containment gasket. Rotate secondary seal latch 90° clockwise. Verify negative delta-P reads > 25 Pa.
+          </div>
+          <div class="step-meta-strip">
+            <span>TARGET: <strong id="active-step-zone">GLOVEBOX_A</strong></span>
+            <span>ACTION: <strong id="active-step-action">SAFETY_CHECK</strong></span>
+          </div>
+          <div class="step-progress-wrapper">
+            <div style="display: flex; justify-content: space-between; font-size: 10px; font-family: var(--font-mono); margin-bottom: 4px;">
+              <span>STEP VALIDATION PROGRESS</span>
+              <span id="active-step-pct">0%</span>
+            </div>
+            <div class="step-progress-track">
+              <div class="step-progress-fill" id="active-step-bar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Procedural Step List (Interactive DAG) -->
+        <div class="steps-pipeline-list" id="pipeline-steps-container">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Step Progression Control Toolbar -->
+        <div style="display: flex; gap: 8px; margin-top: 12px; margin-bottom: 8px;">
+          <button class="btn-tactical" id="btn-play-pause" onclick="togglePlayPause()" style="flex: 1;" title="Freeze or resume step progress">
+            ⏸️ PAUSE
+          </button>
+          <button class="btn-tactical btn-secondary" onclick="manualNextStep()" style="flex: 1;" title="Manually advance to next step">
+            ⏭️ NEXT STEP
+          </button>
+          <button class="btn-tactical btn-secondary" id="btn-auto-toggle" onclick="toggleAutoAdvance()" style="flex: 1;" title="Toggle automatic step progression">
+            ⚙️ AUTO: ON
+          </button>
+        </div>
+
+        <div class="action-buttons-bar">
+          <button class="btn-tactical" onclick="resetExperimentState()">↺ RESTART PROTOCOL</button>
+          <button class="btn-tactical btn-secondary" onclick="openAuditModal()">📋 MISSION AUDIT CERT</button>
+        </div>
+      </div>
+
+      <!-- Anomaly & Hazard Alert Box -->
+      <div class="anomaly-alerts-box">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--neon-crimson); letter-spacing: 1px;">
+            ⚠️ REAL-TIME PROCEDURAL ALARMS
+          </span>
+          <span id="alarm-count-badge" style="font-family: var(--font-mono); font-size: 10px; background: rgba(255,51,102,0.2); color: var(--neon-crimson); padding: 2px 6px; border-radius: 2px;">
+            0 ACTIVE
+          </span>
+        </div>
+        <div class="anomaly-feed" id="anomaly-feed-container">
+          <div class="no-anomalies-placeholder">
+            <span>✓</span>
+            <span>All procedural steps executing within nominal safety thresholds.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CCSDS Telemetry Stream Inspector -->
+      <div class="ccsds-telemetry-box">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--neon-cyan); letter-spacing: 1px;">
+            📡 CCSDS SPACE PACKET STREAM (APID 0x04B2)
+          </span>
+          <span style="font-size: 9px; font-family: var(--font-mono); color: var(--neon-green);" id="ccsds-crc-status">CRC-16 OK</span>
+        </div>
+
+        <div class="hex-stream-window" id="ccsds-hex-display">
+          00 00 04 B2 C0 2A 00 15 00 00 39 E4 01 01 02 00 00 00 5C 64 00 8C F2
+        </div>
+
+        <div class="telemetry-kv-grid">
+          <div class="telemetry-kv-item"><span class="k">APID</span><span class="v" id="tel-apid">0x4b2</span></div>
+          <div class="telemetry-kv-item"><span class="k">SEQ COUNT</span><span class="v" id="tel-seq">#1420</span></div>
+          <div class="telemetry-kv-item"><span class="k">GROUND STATION</span><span class="v" id="tel-station">ISTRAC BLR</span></div>
+          <div class="telemetry-kv-item"><span class="k">CONTACT WINDOW</span><span class="v" id="tel-contact">08:45</span></div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- =========================================================================
+       MISSION AUDIT CERTIFICATE MODAL
+       ========================================================================= -->
+  <div class="modal-overlay" id="audit-modal">
+    <div class="audit-cert-card">
+      <button class="modal-close-btn" onclick="closeAuditModal()">&times;</button>
+      <div class="cert-header">
+        <div class="isro-emblem" style="margin: 0 auto 10px;">ISRO</div>
+        <h2>BHARATIYA ANTARIKSH STATION</h2>
+        <p>ON-BOARD EXPERIMENT AUDIT & TELEMETRY CERTIFICATE</p>
+      </div>
+
+      <div class="cert-body-grid">
+        <div class="cert-item"><div class="k">EXPERIMENT ID</div><div class="v" id="cert-exp-id">BAS-BIO-01</div></div>
+        <div class="cert-item"><div class="k">LEAD SCIENTIST</div><div class="v" id="cert-scientist">Gagannaut Dr. Prashant Nair</div></div>
+        <div class="cert-item"><div class="k">STATION MODULE</div><div class="v">BAS-03 Science Rack Alpha</div></div>
+        <div class="cert-item"><div class="k">ORBIT ALTITUDE</div><div class="v">408.2 km LEO (51.64° Inc)</div></div>
+        <div class="cert-item"><div class="k">INTEGRITY SCORE</div><div class="v" id="cert-integrity-score">100.0% (PASSED)</div></div>
+        <div class="cert-item"><div class="k">STEPS COMPLETED</div><div class="v" id="cert-completed-steps">1 / 7 Validated</div></div>
+        <div class="cert-item"><div class="k">PROCEDURAL ANOMALIES</div><div class="v" id="cert-anomalies-count">0 Recorded</div></div>
+        <div class="cert-item"><div class="k">TELEMETRY FORMAT</div><div class="v">CCSDS 133.0-B-1 (APID 0x04B2)</div></div>
+      </div>
+
+      <div class="cert-stamp">
+        <div>
+          <div class="stamp-seal">ISRO MOX DOWNLINK CERTIFIED</div>
+          <div style="font-size: 9px; color: var(--text-muted);">CRYPTO HASH: SHA-256 [0x9B84...7E21]</div>
+        </div>
+        <button class="btn-tactical" onclick="downloadAuditJSON()">⬇ DOWNLOAD JSON AUDIT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>
